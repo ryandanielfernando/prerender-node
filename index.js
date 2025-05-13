@@ -213,17 +213,39 @@ prerender.getPrerenderedPageResponse = function(req, callback) {
   }
 
   const url = new URL(prerender.buildApiUrl(req));
-  // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
-  adapters[url.protocol].get(url.toString(), options, (response) => {
-    if(response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-      prerender.gunzipResponse(response, callback);
-    } else {
-      prerender.plainResponse(response, callback);
+  // To this more robust implementation:
+  try {
+    const urlString = url.toString();
+    const protocol = url.protocol;
+    const adapter = adapters[protocol];
+    
+    // Check if we have a valid adapter
+    if (!adapter) {
+      return callback(new Error('Unsupported protocol: ' + protocol));
     }
-  }).on('error', function(err) {
+    
+    // Create request with proper error handling
+    const request = adapter.get(urlString, options);
+    
+    // Set up response handler separately
+    request.on('response', function(response) {
+      if(response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+        prerender.gunzipResponse(response, callback);
+      } else {
+        prerender.plainResponse(response, callback);
+      }
+    });
+    
+    // Set up error handler
+    request.on('error', function(err) {
+      callback(err);
+    });
+    
+    // End the request explicitly
+    request.end();
+  } catch (err) {
     callback(err);
-  });
-
+  }
 };
 
 prerender.gunzipResponse = function(response, callback) {
