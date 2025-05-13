@@ -3,6 +3,8 @@ var http = require('http')
   , url = require('url')
   , zlib = require('zlib');
 
+var URL = require('url').URL;
+
 const adapters = { 'http:': http, 'https:': https};
 
 var prerender = module.exports = function(req, res, next) {
