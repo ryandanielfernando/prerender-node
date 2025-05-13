@@ -214,7 +214,7 @@ prerender.getPrerenderedPageResponse = function(req, callback) {
 
   const url = new URL(prerender.buildApiUrl(req));
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
-  adapters[url.protocol].get(url, options, (response) => {
+  adapters[url.protocol].get(url.toString(), options, (response) => {
     if(response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
       prerender.gunzipResponse(response, callback);
     } else {
